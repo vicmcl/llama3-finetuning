@@ -1,5 +1,4 @@
-# LLMa-3-8B Fine-Tuning for Code-Related Question Tag Generation
-============================================================
+# llama3-finetuning
 
 ## Introduction
 
@@ -16,19 +15,44 @@ Automatically generating tags for code-related questions can greatly facilitate 
 
 To use the fine-tuned model for tag generation, you can import it from Hugging Face using the UnSloth library for faster inference.
 
-### Installation
-
-To use this model, you'll need to install the following dependencies:
-
-* `transformers` library for Hugging Face models
-* `unsloth` library for faster inference
-
 ### Usage
+
+#### Install the required dependencies
+
+```bash
+pip install unsloth
+```
 
 #### Inference
 
-To generate tags for a code-related question, follow these steps:
+```python
+from unsloth import FastLanguageModel
 
-1. **Install the required dependencies**:
-```bash
-pip install transformers unsloth
+prompt = """Give a list of tags for the input sentence.
+
+### Input:
+{}
+
+### Output:
+{}"""
+
+model, tokenizer = FastLanguageModel.from_pretrained(
+    model_name = "vicmcl/llama-3-tagger",
+    max_seq_length = 2048,
+    dtype = None,
+    load_in_4bit = True,
+)
+
+FastLanguageModel.for_inference(model)
+
+inputs = tokenizer([prompt.format(input_sentence, "")], return_tensors = "pt").to("cuda")
+
+outputs = model.generate(
+    **inputs,
+    max_new_tokens = 128,
+    use_cache = True,
+    pad_token_id=tokenizer.eos_token_id
+)
+
+decoded_outputs = tokenizer.batch_decode(outputs)
+```
